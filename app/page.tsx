@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Cloud, Cpu, HardDrive, MemoryStick, Monitor, Power, Settings, Wifi, Folder, Globe, Terminal, Plus, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Cloud, Cpu, HardDrive, MemoryStick, Monitor, Power, Settings, Wifi, Folder, Globe, Terminal as TerminalIcon, Plus, ChevronRight } from "lucide-react";
+import { Terminal as XTerminal } from "@xterm/xterm";
 
 const specs = [
   [Cpu, "CPU", "4 vCPU"],
@@ -9,13 +10,96 @@ const specs = [
   [HardDrive, "Storage", "256 GB SSD"],
 ] as const;
 
+function TerminalPanel({ onClose }: { onClose: () => void }) {
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const xtermRef = useRef<XTerminal | null>(null);
+  const [pin, setPin] = useState("");
+  const [connected, setConnected] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    return () => {
+      wsRef.current?.close();
+      xtermRef.current?.dispose();
+    };
+  }, []);
+
+  const connect = () => {
+    if (!pin.trim()) return;
+    setError("");
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${protocol}//${window.location.host}/terminal?pin=${encodeURIComponent(pin.trim())}`);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setConnected(true);
+      setTimeout(() => {
+        if (!terminalRef.current) return;
+        const term = new XTerminal({
+          cursorBlink: true,
+          fontSize: 14,
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+          convertEol: true,
+          theme: { background: "#0b0b0b", foreground: "#f5f5f5", cursor: "#ffffff" },
+        });
+        term.open(terminalRef.current);
+        xtermRef.current = term;
+        term.focus();
+        term.onData((data) => ws.send(JSON.stringify({ type: "input", data })));
+        term.onResize(({ cols, rows }) => ws.send(JSON.stringify({ type: "resize", cols, rows })));
+      }, 0);
+    };
+
+    ws.onmessage = (event) => xtermRef.current?.write(event.data);
+    ws.onerror = () => {
+      setError("Could not connect to the cloud terminal.");
+      setConnected(false);
+    };
+    ws.onclose = (event) => {
+      if (event.code === 1008) setError("Invalid terminal PIN.");
+      setConnected(false);
+    };
+  };
+
+  return <div className="backdrop" onClick={onClose}>
+    <div className={connected ? "terminal-modal connected" : "modal terminal-login"} onClick={e => e.stopPropagation()}>
+      <button className="close" onClick={onClose}>×</button>
+      {!connected ? <>
+        <div className="modal-icon"><TerminalIcon size={23}/></div>
+        <p className="eyebrow">CLOUD TERMINAL</p>
+        <h2>Open your terminal</h2>
+        <p className="copy">This terminal runs directly on your manavOS cloud computer.</p>
+        <input
+          className="terminal-pin"
+          type="password"
+          inputMode="numeric"
+          placeholder="Enter terminal PIN"
+          value={pin}
+          onChange={e => setPin(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") connect(); }}
+          autoFocus
+        />
+        {error && <p className="terminal-error">{error}</p>}
+        <button className="primary" onClick={connect}>Connect to terminal</button>
+      </> : <>
+        <div className="terminal-header">
+          <div><strong>manavOS Terminal</strong><span><i/> Connected to cloud computer</span></div>
+          <button onClick={onClose}>Close</button>
+        </div>
+        <div className="terminal-screen" ref={terminalRef}/>
+      </>}
+    </div>
+  </div>;
+}
+
 export default function Home() {
   const [powered, setPowered] = useState(true);
   const [modal, setModal] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
 
-  const apps = [[Folder, "Files"], [Globe, "Browser"], [Terminal, "Terminal"], [Plus, "App store"]] as const;
+  const apps = [[Folder, "Files"], [Globe, "Browser"], [TerminalIcon, "Terminal"], [Plus, "App store"]] as const;
 
   return <main className="os-shell">
     <header className="topbar"><div className="brand"><span className="brand-mark">m</span><strong>manavOS</strong></div><div className="status"><Wifi size={15}/><span>Connected</span><i/></div><button className="avatar">M</button></header>
@@ -30,6 +114,6 @@ export default function Home() {
       <div className="upgrade-banner"><div><span className="eyebrow">BUILD YOUR COMPUTER</span><h3>Need more power?</h3><p>Scale CPU, memory and storage whenever you need it — without moving your data.</p></div><button onClick={() => setModal("configuration")}>Configure computer <ChevronRight size={16}/></button></div>
     </section>
     <footer className="dock"><span>● &nbsp;manavOS 0.1</span><span>{now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}</span></footer>
-    {modal && <div className="backdrop" onClick={() => setModal(null)}><div className="modal" onClick={e => e.stopPropagation()}><button className="close" onClick={() => setModal(null)}>×</button>{modal === "configuration" ? <><p className="eyebrow">COMPUTER CONFIGURATION</p><h2>Choose your power</h2><p className="copy">Your files and desktop stay exactly where they are when you change the machine.</p><div className="plans"><button><b>Starter</b><span>2 vCPU · 4 GB · 128 GB</span></button><button className="selected"><b>Personal</b><span>4 vCPU · 8 GB · 256 GB</span></button><button><b>Power</b><span>8 vCPU · 16 GB · 512 GB</span></button></div><button className="primary" onClick={() => setModal(null)}>Save configuration</button></> : <><div className="modal-icon"><Monitor size={23}/></div><h2>{modal}</h2><p className="copy">This is the manavOS preview. The cloud runtime and remote application layer will connect here next.</p><button className="primary" onClick={() => setModal(null)}>Got it</button></>}</div></div>}
+    {modal === "Terminal" ? <TerminalPanel onClose={() => setModal(null)} /> : modal && <div className="backdrop" onClick={() => setModal(null)}><div className="modal" onClick={e => e.stopPropagation()}><button className="close" onClick={() => setModal(null)}>×</button>{modal === "configuration" ? <><p className="eyebrow">COMPUTER CONFIGURATION</p><h2>Choose your power</h2><p className="copy">Your files and desktop stay exactly where they are when you change the machine.</p><div className="plans"><button><b>Starter</b><span>2 vCPU · 4 GB · 128 GB</span></button><button className="selected"><b>Personal</b><span>4 vCPU · 8 GB · 256 GB</span></button><button><b>Power</b><span>8 vCPU · 16 GB · 512 GB</span></button></div><button className="primary" onClick={() => setModal(null)}>Save configuration</button></> : <><div className="modal-icon"><Monitor size={23}/></div><h2>{modal}</h2><p className="copy">This is the manavOS preview. The cloud runtime and remote application layer will connect here next.</p><button className="primary" onClick={() => setModal(null)}>Got it</button></>}</div></div>}
   </main>;
 }
