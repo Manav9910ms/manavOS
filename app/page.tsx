@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Cloud, Cpu, HardDrive, MemoryStick, Monitor, Power, Settings, Wifi, Folder, Globe, Terminal as TerminalIcon, Plus, ChevronRight } from "lucide-react";
 import { Terminal as XTerminal } from "@xterm/xterm";
+import "@xterm/xterm/css/xterm.css";
 
 const specs = [
   [Cpu, "CPU", "4 vCPU"],
@@ -14,6 +15,7 @@ function TerminalPanel({ onClose }: { onClose: () => void }) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const xtermRef = useRef<XTerminal | null>(null);
+  const pendingOutputRef = useRef<string[]>([]);
   const [pin, setPin] = useState("");
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState("");
@@ -28,34 +30,67 @@ function TerminalPanel({ onClose }: { onClose: () => void }) {
   const connect = () => {
     if (!pin.trim()) return;
     setError("");
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${protocol}//${window.location.host}/terminal?pin=${encodeURIComponent(pin.trim())}`);
     wsRef.current = ws;
 
     ws.onopen = () => {
       setConnected(true);
-      setTimeout(() => {
-        if (!terminalRef.current) return;
+
+      requestAnimationFrame(() => {
+        if (!terminalRef.current || xtermRef.current) return;
+
         const term = new XTerminal({
           cursorBlink: true,
           fontSize: 14,
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
           convertEol: true,
-          theme: { background: "#0b0b0b", foreground: "#f5f5f5", cursor: "#ffffff" },
+          scrollback: 5000,
+          theme: {
+            background: "#0b0b0b",
+            foreground: "#f5f5f5",
+            cursor: "#ffffff",
+          },
         });
+
         term.open(terminalRef.current);
         xtermRef.current = term;
         term.focus();
-        term.onData((data) => ws.send(JSON.stringify({ type: "input", data })));
-        term.onResize(({ cols, rows }) => ws.send(JSON.stringify({ type: "resize", cols, rows })));
-      }, 0);
+
+        term.onData((data) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "input", data }));
+          }
+        });
+
+        term.onResize(({ cols, rows }) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "resize", cols, rows }));
+          }
+        });
+
+        if (pendingOutputRef.current.length) {
+          term.write(pendingOutputRef.current.join(""));
+          pendingOutputRef.current = [];
+        }
+      });
     };
 
-    ws.onmessage = (event) => xtermRef.current?.write(event.data);
+    ws.onmessage = (event) => {
+      const data = typeof event.data === "string" ? event.data : "";
+      if (xtermRef.current) {
+        xtermRef.current.write(data);
+      } else {
+        pendingOutputRef.current.push(data);
+      }
+    };
+
     ws.onerror = () => {
       setError("Could not connect to the cloud terminal.");
       setConnected(false);
     };
+
     ws.onclose = (event) => {
       if (event.code === 1008) setError("Invalid terminal PIN.");
       setConnected(false);
