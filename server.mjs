@@ -5,13 +5,12 @@ import pty from "node-pty";
 import dotenv from "dotenv";
 import os from "node:os";
 
-// Load the server-only terminal PIN from .env.local on the EC2 machine.
 dotenv.config({ path: ".env.local" });
 
-autoPrepare();
+startServer();
 
-async function autoPrepare() {
-  const dev = process.env.NODE_ENV !== "production";
+async function startServer() {
+  const dev = process.env.NODE_ENV === "development";
   const app = next({ dev });
   const handle = app.getRequestHandler();
   await app.prepare();
@@ -38,10 +37,7 @@ async function autoPrepare() {
     });
 
     ws.send(`\r\n\x1b[1;32mmanavOS Terminal\x1b[0m\r\nConnected to ${os.hostname()}\r\n\r\n`);
-
-    term.onData((data) => {
-      if (ws.readyState === 1) ws.send(data);
-    });
+    term.onData((data) => { if (ws.readyState === 1) ws.send(data); });
 
     ws.on("message", (message) => {
       try {
@@ -50,24 +46,17 @@ async function autoPrepare() {
         if (data.type === "resize" && Number.isInteger(data.cols) && Number.isInteger(data.rows)) {
           term.resize(Math.max(20, Math.min(240, data.cols)), Math.max(5, Math.min(80, data.rows)));
         }
-      } catch {
-        // Ignore malformed client messages.
-      }
+      } catch {}
     });
 
-    const cleanup = () => {
-      try { term.kill(); } catch {}
-    };
+    const cleanup = () => { try { term.kill(); } catch {} };
     ws.on("close", cleanup);
     ws.on("error", cleanup);
   });
 
   server.on("upgrade", (req, socket, head) => {
     const pathname = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`).pathname;
-    if (pathname !== "/terminal") {
-      socket.destroy();
-      return;
-    }
+    if (pathname !== "/terminal") { socket.destroy(); return; }
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req));
   });
 
