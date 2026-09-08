@@ -22,6 +22,7 @@ const resolveSafe = (relative = "") => {
 };
 
 const json = (res, status, data) => {
+  if (res.headersSent) return;
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
   res.end(JSON.stringify(data));
 };
@@ -90,7 +91,13 @@ async function handleDownload(req, res, url) {
 
 function proxyNoVNC(req, res, url) {
   const targetPath = url.pathname.replace(/^\/desktop/, "") || "/";
-  const target = httpRequest({ hostname: NOVNC_HOST, port: NOVNC_PORT, path: targetPath + (url.search || ""), method: req.method, headers: { ...req.headers, host: `${NOVNC_HOST}:${NOVNC_PORT}` } }, upstream => {
+  const target = httpRequest({
+    hostname: NOVNC_HOST,
+    port: NOVNC_PORT,
+    path: targetPath + (url.search || ""),
+    method: req.method,
+    headers: { ...req.headers, host: `${NOVNC_HOST}:${NOVNC_PORT}` }
+  }, upstream => {
     res.writeHead(upstream.statusCode || 502, upstream.headers);
     upstream.pipe(res);
   });
@@ -124,7 +131,10 @@ async function startServer() {
     }
     const shell = process.env.SHELL || "/bin/bash";
     const term = pty.spawn(shell, ["-l"], {
-      name: "xterm-256color", cols: 120, rows: 30, cwd: HOME,
+      name: "xterm-256color",
+      cols: 120,
+      rows: 30,
+      cwd: HOME,
       env: { ...process.env, TERM: "xterm-256color" }
     });
     ws.send(`\r\n\x1b[1;32mmanavOS Terminal\x1b[0m\r\nConnected to ${os.hostname()}\r\n\r\n`);
@@ -142,15 +152,23 @@ async function startServer() {
   });
 
   const desktopWss = new WebSocketServer({ noServer: true });
-  desktopWss.on("connection", (client, req, targetPath = "/websockify") => {
-    const target = new WebSocket(`ws://${NOVNC_HOST}:${NOVNC_PORT}${targetPath}`);
+  desktopWss.on("connection", (client, req) => {
+    const requestUrl = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+    const targetPath = requestUrl.pathname.replace(/^\/desktop/, "") || "/websockify";
+    const target = new WebSocket(`ws://${NOVNC_HOST}:${NOVNC_PORT}${targetPath}${requestUrl.search || ""}`);
+
     const closeBoth = () => {
       try { if (target.readyState === WebSocket.OPEN || target.readyState === WebSocket.CONNECTING) target.close(); } catch {}
       try { if (client.readyState === WebSocket.OPEN || client.readyState === WebSocket.CONNECTING) client.close(); } catch {}
     };
-    target.on("open", () => { if (client.readyState === WebSocket.OPEN) client.send("", { binary: true }); });
-    client.on("message", (data, isBinary) => { if (target.readyState === WebSocket.OPEN) target.send(data, { binary: isBinary }); });
-    target.on("message", (data, isBinary) => { if (client.readyState === WebSocket.OPEN) client.send(data, { binary: isBinary }); });
+
+    target.on("open", () => {});
+    client.on("message", (data, isBinary) => {
+      if (target.readyState === WebSocket.OPEN) target.send(data, { binary: isBinary });
+    });
+    target.on("message", (data, isBinary) => {
+      if (client.readyState === WebSocket.OPEN) client.send(data, { binary: isBinary });
+    });
     target.on("error", closeBoth);
     target.on("close", closeBoth);
     client.on("error", closeBoth);
@@ -161,7 +179,7 @@ async function startServer() {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     if (url.pathname === "/terminal") return terminalWss.handleUpgrade(req, socket, head, ws => terminalWss.emit("connection", ws, req));
     if (url.pathname === "/desktop/websockify" || url.pathname === "/desktop/websockify/") {
-      return desktopWss.handleUpgrade(req, socket, head, ws => desktopWss.emit("connection", ws, req, "/websockify"));
+      return desktopWss.handleUpgrade(req, socket, head, ws => desktopWss.emit("connection", ws, req));
     }
     socket.destroy();
   });
