@@ -1,6 +1,7 @@
 import http from "node:http";
+import { request as httpRequest } from "node:http";
 import next from "next";
-import { WebSocketServer, WebSocket } from "ws";
+import WebSocket, { WebSocketServer } from "ws";
 import pty from "node-pty";
 import dotenv from "dotenv";
 import os from "node:os";
@@ -9,20 +10,162 @@ import { createReadStream } from "node:fs";
 import path from "node:path";
 
 dotenv.config({ path: ".env.local" });
-const HOME=process.env.MANAVOS_HOME||process.env.HOME||"/home/ubuntu";
-const resolveSafe=(relative="")=>{const clean=String(relative).replace(/^[/\\]+/,"");const target=path.resolve(HOME,clean);if(target!==HOME&&!target.startsWith(HOME+path.sep))throw new Error("Invalid path");return target;};
-const json=(res,status,data)=>{res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"});res.end(JSON.stringify(data));};
-const body=req=>new Promise((resolve,reject)=>{let raw="";req.on("data",c=>{raw+=c;if(raw.length>40*1024*1024)req.destroy(new Error("Request too large"));});req.on("end",()=>{try{resolve(JSON.parse(raw||"{}"));}catch{reject(new Error("Invalid JSON"));}});req.on("error",reject);});
+const HOME = process.env.MANAVOS_HOME || process.env.HOME || "/home/ubuntu";
+const NOVNC_HOST = "127.0.0.1";
+const NOVNC_PORT = 6080;
 
-async function handleFiles(req,res,url){try{if(req.method==="GET"){const rel=url.searchParams.get("path")||"";const dir=resolveSafe(rel);const entries=await fs.readdir(dir,{withFileTypes:true});const items=await Promise.all(entries.filter(e=>!e.name.startsWith(".")).map(async e=>{const p=path.join(dir,e.name),s=await fs.stat(p);return{name:e.name,path:path.relative(HOME,p),type:e.isDirectory()?"directory":"file",size:s.size,modified:s.mtime.toISOString()};}));items.sort((a,b)=>a.type===b.type?a.name.localeCompare(b.name):a.type==="directory"?-1:1);return json(res,200,{path:path.relative(HOME,dir),items});}if(req.method==="POST"){const d=await body(req),target=resolveSafe(d.path);if(!d.path||path.basename(target).startsWith("."))throw new Error("Invalid file name");await fs.mkdir(path.dirname(target),{recursive:true});if(d.action==="mkdir")await fs.mkdir(target);else if(d.action==="create")await fs.writeFile(target,String(d.content??""),"utf8");else if(d.action==="upload")await fs.writeFile(target,Buffer.from(String(d.content||""),"base64"));else throw new Error("Unknown action");return json(res,200,{ok:true,path:path.relative(HOME,target)});}if(req.method==="DELETE"){const target=resolveSafe(url.searchParams.get("path")||"");if(target===HOME)throw new Error("Cannot delete home");await fs.rm(target,{recursive:true});return json(res,200,{ok:true});}return json(res,405,{error:"Method not allowed"});}catch(e){return json(res,400,{error:e instanceof Error?e.message:"File operation failed"});}}
-async function handleDownload(req,res,url){try{const target=resolveSafe(url.searchParams.get("path")||""),stat=await fs.stat(target);if(!stat.isFile())throw new Error("Not a file");const filename=path.basename(target).replace(/"/g,'\\"');res.writeHead(200,{"Content-Type":"application/octet-stream","Content-Length":stat.size,"Content-Disposition":`attachment; filename="${filename}"`});createReadStream(target).pipe(res);}catch(e){json(res,404,{error:e instanceof Error?e.message:"File not found"});}}
+const resolveSafe = (relative = "") => {
+  const clean = String(relative).replace(/^[/\\]+/, "");
+  const target = path.resolve(HOME, clean);
+  if (target !== HOME && !target.startsWith(HOME + path.sep)) throw new Error("Invalid path");
+  return target;
+};
 
-function proxyDesktopHttp(req,res,url){const localPath=url.pathname.startsWith("/desktop")?url.pathname.slice("/desktop".length)||"/":"/";const proxy=http.request({hostname:"127.0.0.1",port:6080,path:localPath+(url.search||""),method:req.method,headers:{...req.headers,host:"127.0.0.1:6080"}},r=>{res.writeHead(r.statusCode||502,r.headers);r.pipe(res);});proxy.on("error",()=>{if(!res.headersSent)json(res,503,{error:"Ubuntu desktop service is not running"});else res.destroy();});req.pipe(proxy);}
+const json = (res, status, data) => {
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+  res.end(JSON.stringify(data));
+};
+
+const body = req => new Promise((resolve, reject) => {
+  let raw = "";
+  req.on("data", chunk => {
+    raw += chunk;
+    if (raw.length > 40 * 1024 * 1024) req.destroy(new Error("Request too large"));
+  });
+  req.on("end", () => {
+    try { resolve(JSON.parse(raw || "{}")); } catch { reject(new Error("Invalid JSON")); }
+  });
+  req.on("error", reject);
+});
+
+async function handleFiles(req, res, url) {
+  try {
+    if (req.method === "GET") {
+      const rel = url.searchParams.get("path") || "";
+      const dir = resolveSafe(rel);
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      const items = await Promise.all(entries.filter(e => !e.name.startsWith(".")).map(async e => {
+        const p = path.join(dir, e.name);
+        const s = await fs.stat(p);
+        return { name: e.name, path: path.relative(HOME, p), type: e.isDirectory() ? "directory" : "file", size: s.size, modified: s.mtime.toISOString() };
+      }));
+      items.sort((a, b) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === "directory" ? -1 : 1);
+      return json(res, 200, { path: path.relative(HOME, dir), items });
+    }
+    if (req.method === "POST") {
+      const d = await body(req);
+      const target = resolveSafe(d.path);
+      if (!d.path || path.basename(target).startsWith(".")) throw new Error("Invalid file name");
+      await fs.mkdir(path.dirname(target), { recursive: true });
+      if (d.action === "mkdir") await fs.mkdir(target);
+      else if (d.action === "create") await fs.writeFile(target, String(d.content ?? ""), "utf8");
+      else if (d.action === "upload") await fs.writeFile(target, Buffer.from(String(d.content || ""), "base64"));
+      else throw new Error("Unknown action");
+      return json(res, 200, { ok: true, path: path.relative(HOME, target) });
+    }
+    if (req.method === "DELETE") {
+      const target = resolveSafe(url.searchParams.get("path") || "");
+      if (target === HOME) throw new Error("Cannot delete home");
+      await fs.rm(target, { recursive: true });
+      return json(res, 200, { ok: true });
+    }
+    return json(res, 405, { error: "Method not allowed" });
+  } catch (e) {
+    return json(res, 400, { error: e instanceof Error ? e.message : "File operation failed" });
+  }
+}
+
+async function handleDownload(req, res, url) {
+  try {
+    const target = resolveSafe(url.searchParams.get("path") || "");
+    const stat = await fs.stat(target);
+    if (!stat.isFile()) throw new Error("Not a file");
+    const filename = path.basename(target).replace(/"/g, "\\\"");
+    res.writeHead(200, { "Content-Type": "application/octet-stream", "Content-Length": stat.size, "Content-Disposition": `attachment; filename="${filename}"` });
+    createReadStream(target).pipe(res);
+  } catch (e) {
+    json(res, 404, { error: e instanceof Error ? e.message : "File not found" });
+  }
+}
+
+function proxyNoVNC(req, res, url) {
+  const targetPath = url.pathname.replace(/^\/desktop/, "") || "/";
+  const target = httpRequest({ hostname: NOVNC_HOST, port: NOVNC_PORT, path: targetPath + (url.search || ""), method: req.method, headers: { ...req.headers, host: `${NOVNC_HOST}:${NOVNC_PORT}` } }, upstream => {
+    res.writeHead(upstream.statusCode || 502, upstream.headers);
+    upstream.pipe(res);
+  });
+  target.on("error", err => json(res, 502, { error: `Ubuntu desktop gateway unavailable: ${err.message}` }));
+  req.pipe(target);
+}
 
 startServer();
-async function startServer(){const dev=process.env.NODE_ENV==="development",app=next({dev}),handle=app.getRequestHandler();await app.prepare();const server=http.createServer(async(req,res)=>{const url=new URL(req.url||"/",`http://${req.headers.host||"localhost"}`);if(url.pathname==="/api/files")return handleFiles(req,res,url);if(url.pathname==="/api/files/download")return handleDownload(req,res,url);if(url.pathname.startsWith("/desktop"))return proxyDesktopHttp(req,res,url);return handle(req,res);});
-  const terminalWss=new WebSocketServer({noServer:true});
-  terminalWss.on("connection",(ws,req)=>{const url=new URL(req.url||"/",`http://${req.headers.host||"localhost"}`),pin=url.searchParams.get("pin")||"";if(!process.env.TERMINAL_PIN||pin!==process.env.TERMINAL_PIN){ws.close(1008,"Invalid terminal PIN");return;}const term=pty.spawn(process.env.SHELL||"/bin/bash",["-l"],{name:"xterm-256color",cols:120,rows:30,cwd:HOME,env:{...process.env,TERM:"xterm-256color"}});ws.send(`\r\n\x1b[1;32mmanavOS Terminal\x1b[0m\r\nConnected to ${os.hostname()}\r\n\r\n`);term.onData(data=>{if(ws.readyState===1)ws.send(data);});ws.on("message",message=>{try{const d=JSON.parse(message.toString());if(d.type==="input"&&typeof d.data==="string")term.write(d.data);if(d.type==="resize"&&Number.isInteger(d.cols)&&Number.isInteger(d.rows))term.resize(Math.max(20,Math.min(240,d.cols)),Math.max(5,Math.min(80,d.rows)));}catch{}});const cleanup=()=>{try{term.kill();}catch{}};ws.on("close",cleanup);ws.on("error",cleanup);});
-  server.on("upgrade",(req,socket,head)=>{const url=new URL(req.url||"/",`http://${req.headers.host||"localhost"}`),pathname=url.pathname;if(pathname==="/terminal")return terminalWss.handleUpgrade(req,socket,head,ws=>terminalWss.emit("connection",ws,req));if(pathname.startsWith("/desktop/websockify")){const target=http.request({hostname:"127.0.0.1",port:6080,path:"/websockify"+(url.search||""),method:"GET",headers:{...req.headers,host:"127.0.0.1:6080",connection:"Upgrade",upgrade:"websocket"}});target.on("upgrade",(proxyRes,proxySocket,proxyHead)=>{const lines=[`HTTP/${proxyRes.httpVersion} ${proxyRes.statusCode} ${proxyRes.statusMessage}`,...Object.entries(proxyRes.headers).map(([k,v])=>`${k}: ${Array.isArray(v)?v.join("; "):v}`),"\r\n"].join("\r\n");socket.write(lines);proxySocket.pipe(socket);socket.pipe(proxySocket);if(proxyHead.length)proxySocket.unshift(proxyHead);});target.on("error",()=>socket.destroy());target.end();return;}socket.destroy();});
-  const port=Number(process.env.PORT||3000);server.listen(port,"0.0.0.0",()=>console.log(`> manavOS running on http://0.0.0.0:${port}`));
+
+async function startServer() {
+  const dev = process.env.NODE_ENV === "development";
+  const app = next({ dev });
+  const handle = app.getRequestHandler();
+  await app.prepare();
+
+  const server = http.createServer(async (req, res) => {
+    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+    if (url.pathname === "/api/files") return handleFiles(req, res, url);
+    if (url.pathname === "/api/files/download") return handleDownload(req, res, url);
+    if (url.pathname === "/desktop" || url.pathname.startsWith("/desktop/")) return proxyNoVNC(req, res, url);
+    return handle(req, res);
+  });
+
+  const terminalWss = new WebSocketServer({ noServer: true });
+  terminalWss.on("connection", (ws, req) => {
+    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+    const pin = url.searchParams.get("pin") || "";
+    if (!process.env.TERMINAL_PIN || pin !== process.env.TERMINAL_PIN) {
+      ws.close(1008, "Invalid terminal PIN");
+      return;
+    }
+    const shell = process.env.SHELL || "/bin/bash";
+    const term = pty.spawn(shell, ["-l"], {
+      name: "xterm-256color", cols: 120, rows: 30, cwd: HOME,
+      env: { ...process.env, TERM: "xterm-256color" }
+    });
+    ws.send(`\r\n\x1b[1;32mmanavOS Terminal\x1b[0m\r\nConnected to ${os.hostname()}\r\n\r\n`);
+    term.onData(data => { if (ws.readyState === WebSocket.OPEN) ws.send(data); });
+    ws.on("message", message => {
+      try {
+        const d = JSON.parse(message.toString());
+        if (d.type === "input" && typeof d.data === "string") term.write(d.data);
+        if (d.type === "resize" && Number.isInteger(d.cols) && Number.isInteger(d.rows)) term.resize(Math.max(20, Math.min(240, d.cols)), Math.max(5, Math.min(80, d.rows)));
+      } catch {}
+    });
+    const cleanup = () => { try { term.kill(); } catch {} };
+    ws.on("close", cleanup);
+    ws.on("error", cleanup);
+  });
+
+  const desktopWss = new WebSocketServer({ noServer: true });
+  desktopWss.on("connection", (client, req, targetPath = "/websockify") => {
+    const target = new WebSocket(`ws://${NOVNC_HOST}:${NOVNC_PORT}${targetPath}`);
+    const closeBoth = () => {
+      try { if (target.readyState === WebSocket.OPEN || target.readyState === WebSocket.CONNECTING) target.close(); } catch {}
+      try { if (client.readyState === WebSocket.OPEN || client.readyState === WebSocket.CONNECTING) client.close(); } catch {}
+    };
+    target.on("open", () => { if (client.readyState === WebSocket.OPEN) client.send("", { binary: true }); });
+    client.on("message", (data, isBinary) => { if (target.readyState === WebSocket.OPEN) target.send(data, { binary: isBinary }); });
+    target.on("message", (data, isBinary) => { if (client.readyState === WebSocket.OPEN) client.send(data, { binary: isBinary }); });
+    target.on("error", closeBoth);
+    target.on("close", closeBoth);
+    client.on("error", closeBoth);
+    client.on("close", closeBoth);
+  });
+
+  server.on("upgrade", (req, socket, head) => {
+    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+    if (url.pathname === "/terminal") return terminalWss.handleUpgrade(req, socket, head, ws => terminalWss.emit("connection", ws, req));
+    if (url.pathname === "/desktop/websockify" || url.pathname === "/desktop/websockify/") {
+      return desktopWss.handleUpgrade(req, socket, head, ws => desktopWss.emit("connection", ws, req, "/websockify"));
+    }
+    socket.destroy();
+  });
+
+  const port = Number(process.env.PORT || 3000);
+  server.listen(port, "0.0.0.0", () => console.log(`> manavOS running on http://0.0.0.0:${port}`));
 }
