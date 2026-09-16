@@ -6,12 +6,8 @@ const SESSION_MS = SESSION_DAYS * 24 * 60 * 60 * 1000;
 const COOKIE = "manavos_session";
 const isProd = process.env.NODE_ENV === "production";
 
-function b64url(value) {
-  return Buffer.from(value).toString("base64url");
-}
-function hashToken(token) {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
+function b64url(value) { return Buffer.from(value).toString("base64url"); }
+function hashToken(token) { return crypto.createHash("sha256").update(token).digest("hex"); }
 export function hashPassword(password) {
   const salt = crypto.randomBytes(16);
   const key = crypto.scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 });
@@ -27,9 +23,16 @@ export function verifyPassword(password, encoded) {
   } catch { return false; }
 }
 function parseCookies(header = "") {
-  return Object.fromEntries(header.split(";").map(v => v.trim()).filter(Boolean).map(v => {
-    const i = v.indexOf("="); return i < 0 ? [v, ""] : [v.slice(0, i), decodeURIComponent(v.slice(i + 1));
-  }));
+  const out = {};
+  for (const raw of header.split(";")) {
+    const v = raw.trim();
+    if (!v) continue;
+    const i = v.indexOf("=");
+    const key = i < 0 ? v : v.slice(0, i);
+    const value = i < 0 ? "" : v.slice(i + 1);
+    try { out[key] = decodeURIComponent(value); } catch { out[key] = value; }
+  }
+  return out;
 }
 export function sessionCookie(token, maxAge = SESSION_DAYS * 24 * 60 * 60) {
   return `${COOKIE}=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${isProd ? "; Secure" : ""}`;
@@ -61,5 +64,5 @@ export function getUserFromRequest(req) {
 export function validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
 export function validatePassword(password) { return typeof password === "string" && password.length >= 8 && password.length <= 128; }
 export function normalizeEmail(email) { return String(email || "").trim().toLowerCase(); }
-
 export function userPublic(user) { return { id: user.id, email: user.email, name: user.name }; }
+export const sessionCookieName = COOKIE;
