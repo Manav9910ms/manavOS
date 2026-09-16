@@ -17,7 +17,7 @@ import { audit, rateLimit, sameOrigin, securityHeaders } from "./server/security
 
 dotenv.config({ path: ".env.local" });
 const PORT = Number(process.env.PORT || 3000);
-const WORKSPACES_DIR = path.resolve(process.env.MANAVOS_WORKSPACES_DIR || "/var/lib/manavos/users");
+const WORKSPACES_DIR = path.resolve(process.env.MANAVOS_WORKSPACES_DIR || "./data/workspaces");
 const NOVNC_HOST = "127.0.0.1";
 const NOVNC_PORT = 6080;
 const NOVNC_ROOT = "/desktop";
@@ -89,7 +89,7 @@ async function awsMachineState(instanceId) {
   return { status: state, cpu, memoryMb: null, storageGb: null, freeStorageGb: null, provider: "aws-ec2", providerInstanceId: instanceId, publicIp: i.PublicIpAddress || null, instanceType: i.InstanceType || null, rootDeviceId: rootDevice || null };
 }
 async function machineState(user) {
-  const record = machineRecord(user);
+  machineRecord(user);
   return process.env.AWS_INSTANCE_ID ? awsMachineState(process.env.AWS_INSTANCE_ID) : localMachineState();
 }
 
