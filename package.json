@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check server/auth.mjs && node --check server/db.mjs"
+    "check": "node --check server.mjs && node --check server/auth.mjs && node --check server/db.mjs",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.879.0",
