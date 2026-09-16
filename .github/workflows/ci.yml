@@ -17,10 +17,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - name: Install
         run: npm install
       - name: Syntax checks
         run: npm run check
+      - name: Tests
+        run: npm test
       - name: Production build
         run: npm run build
