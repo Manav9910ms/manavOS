@@ -6,5 +6,5 @@
 .file-preview-window .window-actions a:hover{background:rgba(127,108,86,.11)}
 .file-preview-content{margin:0;padding:22px 24px;flex:1;overflow:auto;background:#fffdf8;color:#302b25;font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
 
-.folder-icon-blue{color:#2878d8!important;fill:rgba(40,120,216,.14)}
-.file-icon-white{color:#171717!important;fill:none}
+.folder-icon-blue{color:#2878d8!important;stroke:#2878d8!important;fill:rgba(40,120,216,.14)!important}
+.file-icon-white{color:#171717!important;stroke:#171717!important;fill:#ffffff!important}
