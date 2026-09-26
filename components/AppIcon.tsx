@@ -1,0 +1,1 @@
+"use client";\nimport type { LucideIcon } from "lucide-react";\nexport function AppIcon({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick: () => void }) {\n  return <button className="app-icon-card" onClick={onClick}><span className="app-icon-mark"><Icon size={28} strokeWidth={1.8}/></span><span>{label}</span></button>;\n}\n
