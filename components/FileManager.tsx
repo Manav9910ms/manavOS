@@ -92,7 +92,7 @@ export function FileManager({ onClose }: { onClose?: () => void }) {
 
   return <div className="files-window">
     <div className="window-bar">
-      <div className="window-title"><span className="window-folder"><FolderOpen size={15}/></span><strong>Files</strong><small>/{cwd || "home"}</small></div>
+      <div className="window-title"><span className="window-folder"><FolderOpen className="folder-icon-blue" size={15}/></span><strong>Files</strong><small>/{cwd || "home"}</small></div>
       <div className="window-actions"><button onClick={() => load(cwd)} title="Refresh"><RefreshCw size={15}/></button>{onClose && <button onClick={onClose} title="Close"><X size={15}/></button>}</div>
     </div>
     <div className="file-toolbar">
@@ -107,7 +107,7 @@ export function FileManager({ onClose }: { onClose?: () => void }) {
       {loading ? <div className="empty">Loading cloud storage…</div> :
        items.length === 0 ? <div className="empty"><FolderOpen size={24}/>Empty folder</div> :
        items.map(item => <div className="file-row" key={item.path} onDoubleClick={() => openItem(item)}>
-         <span className="file-main">{item.type === "directory" ? <Folder size={17}/> : <File size={17}/>}<b>{item.name}</b></span>
+         <span className="file-main">{item.type === "directory" ? <Folder className="folder-icon-blue" size={17}/> : <File className="file-icon-white" size={17}/>}<b>{item.name}</b></span>
          <span>{item.type === "directory" ? "Folder" : "File"}</span>
          <span>{item.type === "directory" ? "—" : Math.max(1, item.size) + " B"}</span>
          <div className="row-actions">
