@@ -5,21 +5,21 @@ const BWRAP = process.env.MANAVOS_BWRAP || "/usr/bin/bwrap";
 
 export function startSandboxedTerminal(ws, user) {
   if (!fs.existsSync(BWRAP)) {
-    ws.send("\r\n\x1b[1;31mTerminal sandbox unavailable.\x1b[0m\r\nBubblewrap is not installed on the EC2 backbone.\r\n");
+    ws.send(
+      "\r\n\x1b[1;31mTerminal sandbox unavailable.\x1b[0m\r\n" +
+      "Bubblewrap is not installed on the EC2 backbone.\r\n"
+    );
     ws.close(1011, "sandbox unavailable");
     return;
   }
 
   const args = [
     "--die-with-parent",
-    "--new-session",
     "--unshare-pid",
     "--unshare-ipc",
     "--unshare-uts",
     "--unshare-net",
 
-    // Ubuntu uses merged-/usr paths, but the dynamic loader and system
-    // libraries still need to be visible inside the sandbox.
     "--ro-bind", "/usr", "/usr",
     "--ro-bind", "/bin", "/bin",
     "--ro-bind", "/lib", "/lib",
@@ -57,7 +57,11 @@ export function startSandboxedTerminal(ws, user) {
       }
     });
   } catch (error) {
-    ws.send("\r\n\x1b[1;31mTerminal failed to start.\x1b[0m\r\n");
+    ws.send(
+      "\r\n\x1b[1;31mTerminal failed to start.\x1b[0m\r\n" +
+      (error instanceof Error ? error.message : "unknown error") +
+      "\r\n"
+    );
     ws.close(1011, "spawn failed");
     return;
   }
