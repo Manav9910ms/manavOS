@@ -1,0 +1,1 @@
+import type { Metadata } from "next";\nimport "./globals.css";\nexport const metadata: Metadata={title:"manavOS — Your computer, anywhere",description:"A public cloud workspace."};\nexport default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body>{children}</body></html>;}\n
