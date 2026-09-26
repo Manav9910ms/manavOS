@@ -8,3 +8,7 @@
 
 .folder-icon-blue{color:#2878d8!important;stroke:#2878d8!important;fill:rgba(40,120,216,.14)!important}
 .file-icon-white{color:#171717!important;stroke:#171717!important;fill:#ffffff!important}
+
+/* MS-OS desktop file icons */
+.desktop-file-icon .folder-icon-blue{color:#2878d8!important;stroke:#2878d8!important;fill:#2878d8!important;}
+.desktop-file-icon .file-icon-white{color:#111111!important;stroke:#111111!important;fill:#ffffff!important;}
