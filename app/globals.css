@@ -12,3 +12,291 @@
 /* MS-OS desktop file icons */
 .desktop-file-icon .folder-icon-blue{color:#2878d8!important;stroke:#2878d8!important;fill:#2878d8!important;}
 .desktop-file-icon .file-icon-white{color:#111111!important;stroke:#111111!important;fill:#ffffff!important;}
+
+/* Refined manavOS visual system */
+.os-page{
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 84% 15%, rgba(255,250,241,.72), transparent 28%),
+    radial-gradient(circle at 14% 78%, rgba(255,255,255,.35), transparent 24%),
+    #eee1cc;
+}
+.os-page::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.34;
+  background-image:radial-gradient(rgba(74,60,43,.13) .7px, transparent .7px);
+  background-size:18px 18px;
+  mask-image:linear-gradient(to bottom, rgba(0,0,0,.7), transparent 78%);
+}
+.landing-top{
+  position:relative;
+  z-index:2;
+  height:78px;
+  padding:0 clamp(20px,4vw,56px);
+  border-bottom:1px solid rgba(49,42,34,.08);
+  background:rgba(249,242,231,.28);
+  backdrop-filter:blur(16px);
+}
+.logo small{
+  color:#9b8974;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.02em;
+  padding-left:2px;
+}
+.session-pill{
+  box-shadow:0 5px 18px rgba(68,53,36,.05);
+}
+.fullscreen-button{
+  transition:transform .2s ease, background .2s ease, box-shadow .2s ease;
+  box-shadow:0 5px 18px rgba(68,53,36,.05);
+}
+.fullscreen-button:hover{
+  transform:translateY(-1px);
+  background:rgba(255,252,247,.82);
+  box-shadow:0 8px 22px rgba(68,53,36,.09);
+}
+.landing-center{
+  position:relative;
+  z-index:1;
+  width:min(1160px,calc(100% - 44px));
+  padding:clamp(46px,7vh,76px) 0 34px;
+}
+.hero-copy{
+  max-width:760px;
+}
+.hero-badge{
+  width:max-content;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  margin-bottom:16px;
+  padding:8px 11px;
+  border:1px solid rgba(49,42,34,.10);
+  border-radius:999px;
+  background:rgba(255,250,243,.54);
+  color:#806d59;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.03em;
+  box-shadow:0 7px 22px rgba(87,66,43,.04);
+}
+.hero-copy h1{
+  font-size:clamp(58px,8.4vw,104px);
+  text-wrap:balance;
+  text-shadow:0 2px 0 rgba(255,255,255,.32);
+}
+.hero-copy p{
+  max-width:620px;
+  font-size:17px;
+  line-height:1.7;
+}
+.launcher-grid{
+  margin-top:48px;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:14px;
+}
+.app-icon-card{
+  position:relative;
+  min-height:188px;
+  overflow:hidden;
+  border-color:rgba(63,52,39,.10);
+  background:rgba(255,250,244,.68);
+  box-shadow:0 12px 38px rgba(87,66,43,.06);
+  transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+}
+.app-icon-card::after{
+  content:"";
+  position:absolute;
+  inset:auto -25% -65% -25%;
+  height:120px;
+  background:radial-gradient(circle,rgba(255,255,255,.55),transparent 65%);
+  opacity:.8;
+  pointer-events:none;
+}
+.app-icon-card:hover{
+  transform:translateY(-6px);
+  border-color:rgba(63,52,39,.18);
+  background:rgba(255,252,248,.92);
+  box-shadow:0 22px 48px rgba(87,66,43,.12);
+}
+.app-icon-card:focus-visible,.fullscreen-button:focus-visible{
+  outline:2px solid rgba(86,111,136,.55);
+  outline-offset:3px;
+}
+.app-icon-mark{
+  width:72px;
+  height:72px;
+  border-radius:21px;
+  background:rgba(249,240,228,.86);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 8px 22px rgba(86,67,45,.05);
+}
+.app-icon-label{
+  position:relative;
+  z-index:1;
+  font-weight:800 !important;
+}
+.app-icon-description{
+  position:relative;
+  z-index:1;
+  color:#988775;
+  font-size:11px;
+  line-height:1.35;
+}
+.workspace-strip{
+  margin-top:17px;
+  padding:12px 14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:18px;
+  border:1px solid rgba(49,42,34,.09);
+  border-radius:15px;
+  background:rgba(255,250,243,.48);
+  box-shadow:0 8px 28px rgba(87,66,43,.04);
+}
+.workspace-strip > div{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.workspace-strip strong{font-size:12px}
+.workspace-strip small{color:#9b8974;font-size:11px;margin-left:3px}
+.workspace-dot{
+  width:8px;height:8px;border-radius:50%;background:#79997f;
+  box-shadow:0 0 0 4px rgba(121,153,127,.12);
+}
+.workspace-strip button{
+  border:0;
+  background:transparent;
+  color:#625446;
+  padding:7px 8px;
+  border-radius:9px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:700;
+}
+.workspace-strip button:hover{background:rgba(255,255,255,.42)}
+.landing-footer{
+  position:relative;
+  z-index:2;
+  border-top:1px solid rgba(49,42,34,.08);
+  background:rgba(249,242,231,.2);
+  padding:16px clamp(20px,4vw,56px) 20px;
+}
+.panel-shell{width:min(1120px,100%)}
+.panel-backdrop{background:rgba(40,32,24,.38)}
+.terminal-window,.files-window,.simple-window{
+  box-shadow:0 36px 100px rgba(20,14,9,.34);
+}
+.desktop-page{
+  background:
+    radial-gradient(circle at 78% 12%,rgba(255,255,255,.22),transparent 22%),
+    radial-gradient(circle at 18% 30%,rgba(255,255,255,.10),transparent 18%),
+    #76d6d4;
+}
+.desktop-page::before{
+  content:"";
+  position:absolute;
+  inset:54px 0 0;
+  pointer-events:none;
+  background:
+    linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);
+  background-size:34px 34px;
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,.5),transparent 72%);
+}
+.desktop-topbar{
+  position:relative;
+  z-index:3;
+  height:58px;
+  background:rgba(244,255,255,.24);
+  border-bottom:1px solid rgba(16,63,71,.11);
+}
+.desktop-topbar strong{letter-spacing:-.02em}
+.desktop-topbar button{
+  transition:background .18s ease,transform .18s ease;
+}
+.desktop-topbar button:hover{
+  background:rgba(255,255,255,.3);
+  transform:translateX(-1px);
+}
+.desktop-icons{
+  position:relative;
+  z-index:2;
+  padding:32px;
+  gap:13px;
+}
+.desktop-file-icon{
+  width:102px;
+  min-height:110px;
+  padding:11px 8px;
+  transition:transform .18s ease, background .18s ease;
+}
+.desktop-file-icon:hover{
+  transform:translateY(-3px);
+  background:rgba(255,255,255,.18);
+}
+.desktop-file-icon span{
+  width:64px;
+  height:64px;
+  display:grid;
+  place-items:center;
+  border-radius:16px;
+  background:rgba(255,255,255,.11);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+}
+.desktop-file-icon b{
+  font-size:11px;
+  padding:4px 7px;
+  border-radius:7px;
+  transition:background .18s ease;
+}
+.desktop-file-icon:hover b{background:rgba(255,255,255,.17)}
+.desktop-dock{
+  z-index:20;
+  padding:8px;
+  gap:5px;
+  border-radius:20px;
+  background:rgba(247,255,255,.55);
+  box-shadow:0 22px 62px rgba(13,75,79,.18), inset 0 1px 0 rgba(255,255,255,.5);
+}
+.desktop-dock button{
+  position:relative;
+  min-width:78px;
+  height:60px;
+  transition:transform .16s ease, background .16s ease;
+}
+.desktop-dock button:hover{
+  transform:translateY(-6px) scale(1.04);
+  background:rgba(255,255,255,.48);
+}
+.desktop-window-layer{
+  background:rgba(14,76,79,.14);
+}
+.file-preview-window{
+  box-shadow:0 34px 90px rgba(20,14,9,.32);
+}
+@media(max-width:900px){
+  .launcher-grid{grid-template-columns:repeat(2,1fr)}
+  .workspace-strip > div{flex-wrap:wrap}
+}
+@media(max-width:560px){
+  .logo small{display:none}
+  .hero-badge{margin-bottom:12px}
+  .hero-copy p{font-size:15px}
+  .launcher-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .app-icon-card{min-height:155px;border-radius:19px}
+  .app-icon-description{font-size:10px}
+  .workspace-strip{align-items:flex-start;flex-direction:column}
+  .landing-footer{gap:7px;flex-wrap:wrap}
+  .desktop-icons{padding:22px 14px}
+  .desktop-dock{bottom:14px}
+}
