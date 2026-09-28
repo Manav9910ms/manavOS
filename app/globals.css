@@ -311,3 +311,135 @@
 .desktop-empty strong{font-size:16px}
 .desktop-empty span{font-size:12px;opacity:.68;max-width:290px;line-height:1.5}
 @media(max-width:560px){.desktop-brand small{display:none}.desktop-status span:nth-of-type(2){display:none}}
+
+/* Account & authentication UI */
+.signin-button{
+  height:38px;
+  padding:0 15px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:12px;
+  background:#302920;
+  color:#fff8ee;
+  text-decoration:none;
+  font-size:12px;
+  font-weight:800;
+  box-shadow:0 7px 20px rgba(48,41,32,.12);
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.signin-button:hover{transform:translateY(-1px);background:#3a3127;box-shadow:0 10px 26px rgba(48,41,32,.16)}
+.account-menu{display:flex;align-items:center;gap:6px}
+.account-chip{
+  height:38px;
+  max-width:240px;
+  padding:0 12px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  border:1px solid rgba(49,42,34,.10);
+  background:rgba(255,255,255,.38);
+  border-radius:999px;
+  color:#625649;
+  font-size:12px;
+}
+.account-chip span{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account-action{
+  height:38px;
+  padding:0 11px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid rgba(49,42,34,.10);
+  background:rgba(255,255,255,.28);
+  border-radius:12px;
+  color:#625649;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:700;
+}
+.account-action:hover{background:rgba(255,255,255,.56)}
+.account-action:disabled{opacity:.55;cursor:wait}
+.auth-page{
+  min-height:100vh;
+  position:relative;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  padding:34px 20px;
+  color:#322a22;
+  background:
+    radial-gradient(circle at 18% 12%,rgba(255,255,255,.62),transparent 25%),
+    radial-gradient(circle at 84% 80%,rgba(255,250,240,.72),transparent 29%),
+    #eee1cc;
+}
+.auth-orbit{position:absolute;border:1px solid rgba(70,55,39,.08);border-radius:50%;pointer-events:none}
+.auth-orbit-one{width:540px;height:540px;right:-180px;top:-210px}
+.auth-orbit-two{width:420px;height:420px;left:-180px;bottom:-180px}
+.auth-back{
+  position:absolute;
+  top:24px;
+  left:28px;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  color:#6f6153;
+  text-decoration:none;
+  font-size:12px;
+  font-weight:700;
+}
+.auth-card{
+  width:min(470px,100%);
+  position:relative;
+  z-index:2;
+  padding:30px;
+  border:1px solid rgba(49,42,34,.11);
+  border-radius:25px;
+  background:rgba(255,250,244,.82);
+  backdrop-filter:blur(18px);
+  box-shadow:0 30px 90px rgba(72,54,36,.16), inset 0 1px 0 rgba(255,255,255,.72);
+}
+.auth-brand{display:flex;align-items:center;gap:10px}
+.auth-brand>span{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#2e2821;color:#f6ede2;font-weight:900}
+.auth-brand>div{display:flex;flex-direction:column}
+.auth-brand strong{font-size:18px;letter-spacing:-.03em}
+.auth-brand small{font-size:10px;color:#9a8874}
+.auth-intro{margin-top:28px}
+.auth-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:14px;background:#f5eadb;color:#6d5a45;border:1px solid rgba(49,42,34,.08)}
+.auth-intro .kicker{display:block;margin-top:17px}
+.auth-intro h1{font-size:36px;line-height:1.04;letter-spacing:-.055em;margin:9px 0 9px}
+.auth-intro p{margin:0;color:#7b6b5a;font-size:13px;line-height:1.6}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:24px;padding:4px;border-radius:12px;background:#eee5d8}
+.auth-tabs button{border:0;background:transparent;padding:10px;border-radius:9px;color:#806f5d;cursor:pointer;font-size:12px;font-weight:800}
+.auth-tabs button.active{background:#fffaf3;color:#382f27;box-shadow:0 3px 12px rgba(69,52,34,.07)}
+.auth-form{display:grid;gap:13px;margin-top:19px}
+.auth-form label>span{display:block;margin-bottom:6px;color:#615445;font-size:11px;font-weight:800}
+.auth-input-wrap{height:45px;display:flex;align-items:center;gap:9px;padding:0 12px;border:1px solid rgba(49,42,34,.12);border-radius:11px;background:rgba(255,255,255,.55)}
+.auth-input-wrap:focus-within{border-color:rgba(99,78,56,.35);box-shadow:0 0 0 3px rgba(128,103,77,.08)}
+.auth-form input{width:100%;height:100%;border:0;outline:0;background:transparent;color:#342d26;font-size:13px}
+.auth-input-wrap>button{border:0;background:transparent;width:28px;height:28px;display:grid;place-items:center;color:#806e5d;cursor:pointer;border-radius:7px}
+.auth-input-wrap>button:hover{background:rgba(127,108,86,.09)}
+.auth-form>label>input{width:100%;height:45px;padding:0 12px;border:1px solid rgba(49,42,34,.12);border-radius:11px;background:rgba(255,255,255,.55);outline:0;color:#342d26}
+.auth-form>label>input:focus{border-color:rgba(99,78,56,.35);box-shadow:0 0 0 3px rgba(128,103,77,.08)}
+.auth-error{padding:10px 11px;border-radius:10px;background:#fff0ee;border:1px solid rgba(168,77,67,.12);color:#984e46;font-size:12px;line-height:1.45}
+.auth-submit{
+  height:45px;border:0;border-radius:11px;background:#2f2922;color:#fff9f0;
+  display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-size:13px;font-weight:800;
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease
+}
+.auth-submit:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 10px 24px rgba(47,41,34,.15);background:#392f26}
+.auth-submit:disabled,.google-button:disabled{opacity:.55;cursor:wait}
+.auth-divider{display:flex;align-items:center;gap:12px;color:#a28f7b;font-size:11px;margin:18px 0}
+.auth-divider::before,.auth-divider::after{content:"";height:1px;background:rgba(49,42,34,.09);flex:1}
+.google-button{
+  width:100%;height:44px;display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid rgba(49,42,34,.12);
+  border-radius:11px;background:rgba(255,255,255,.55);color:#423930;cursor:pointer;font-size:12px;font-weight:800
+}
+.google-button:hover:not(:disabled){background:rgba(255,255,255,.85)}
+.google-letter{font-weight:900;font-size:16px;color:#4285f4}
+.auth-note{margin:16px 0 0;text-align:center;color:#988675;font-size:10px;line-height:1.55}
+@media(max-width:860px){.top-right{gap:7px}.account-chip{max-width:170px}.account-chip span{max-width:110px}}
+@media(max-width:560px){
+  .top-right{gap:6px}.signin-button,.account-chip{height:35px}.account-action{height:35px;padding:0 9px}.account-action{font-size:11px}.account-chip span{max-width:75px}
+  .auth-card{padding:24px 20px;border-radius:21px}.auth-intro h1{font-size:31px}.auth-back{left:18px}
+}
