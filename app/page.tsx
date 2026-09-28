@@ -1,21 +1,40 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AppWindow, ArrowRight, Folder, Globe, Maximize, Monitor, Sparkles, Store, Terminal, X } from "lucide-react";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { AppWindow, ArrowRight, Folder, Globe, LogOut, Maximize, Monitor, Sparkles, Store, Terminal, UserRound, X } from "lucide-react";
 import { AppIcon } from "@/components/AppIcon";
 import { FileManager } from "@/components/FileManager";
 import { TerminalWindow } from "@/components/TerminalWindow";
+import { auth } from "@/lib/firebase";
+import { signOutManavOS, syncFirebaseSession } from "@/lib/firebase-auth";
 
 type Panel = "terminal" | "files" | "browser" | "store" | null;
 
 export default function HomePage() {
   const [panel, setPanel] = useState<Panel>(null);
   const [ready, setReady] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [authBusy, setAuthBusy] = useState(false);
 
   useEffect(() => {
     fetch("/api/session", { credentials: "same-origin", cache: "no-store" })
       .then(response => setReady(response.ok))
       .catch(() => setReady(false));
+
+    return onAuthStateChanged(auth, async currentUser => {
+      setUser(currentUser);
+
+      if (currentUser) {
+        try {
+          await syncFirebaseSession(currentUser);
+          setReady(true);
+        } catch {
+          // The Firebase UI remains signed in, but the backend session can
+          // be repaired by signing out and signing in again.
+        }
+      }
+    });
   }, []);
 
   const fullscreen = async () => {
@@ -23,6 +42,18 @@ export default function HomePage() {
       await document.documentElement.requestFullscreen?.();
     } else {
       await document.exitFullscreen?.();
+    }
+  };
+
+  const signOut = async () => {
+    setAuthBusy(true);
+    try {
+      await signOutManavOS();
+      setUser(null);
+      const response = await fetch("/api/session", { credentials: "same-origin", cache: "no-store" });
+      setReady(response.ok);
+    } finally {
+      setAuthBusy(false);
     }
   };
 
@@ -40,6 +71,24 @@ export default function HomePage() {
             <i />
             {ready ? "Cloud ready" : "Starting cloud"}
           </span>
+
+          {user ? (
+            <div className="account-menu">
+              <div className="account-chip" title={user.email || "Signed in"}>
+                <UserRound size={15} />
+                <span>{user.displayName || user.email || "Account"}</span>
+              </div>
+              <button className="account-action" onClick={signOut} disabled={authBusy} title="Sign out">
+                <LogOut size={15} />
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <a className="signin-button" href="/auth">
+              Sign in
+            </a>
+          )}
+
           <button className="fullscreen-button" onClick={fullscreen}>
             <Maximize size={15} />
             Fullscreen
@@ -66,8 +115,8 @@ export default function HomePage() {
         <div className="workspace-strip">
           <div>
             <span className="workspace-dot" />
-            <strong>{ready ? "Workspace online" : "Connecting to workspace"}</strong>
-            <small>Anonymous cloud session</small>
+            <strong>{user ? "Account workspace online" : ready ? "Workspace online" : "Connecting to workspace"}</strong>
+            <small>{user ? "Signed in · persistent workspace" : "Guest · temporary workspace"}</small>
           </div>
           <button onClick={() => setPanel("files")}>
             Open Files <ArrowRight size={14} />
@@ -78,7 +127,7 @@ export default function HomePage() {
       <footer className="landing-footer">
         <span>manavOS 1.0</span>
         <span>Files · Terminal · Desktop</span>
-        <span>EC2 backbone</span>
+        <span>{user ? "Signed in" : "Guest mode"}</span>
       </footer>
 
       {panel && (
