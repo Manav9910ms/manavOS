@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Download, File, Folder, Globe, Store, Terminal, X } from "lucide-react";
+import { ArrowLeft, Download, File, Folder, Globe, RefreshCw, Store, Terminal, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { TerminalWindow } from "@/components/TerminalWindow";
 import { FileManager } from "@/components/FileManager";
@@ -13,11 +13,19 @@ export default function MSOSDesktop() {
   const [window, setWindow] = useState<"terminal" | "files" | "browser" | "store" | null>(null);
   const [viewer, setViewer] = useState<{ item: Item; content: string } | null>(null);
   const [opening, setOpening] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const reload = () =>
-    api<{ items: Item[] }>("/api/files")
-      .then(data => setItems(data.items))
-      .catch(() => {});
+  const reload = async () => {
+    setRefreshing(true);
+    try {
+      const data = await api<{ items: Item[] }>("/api/files");
+      setItems(data.items);
+    } catch {
+      setItems([]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     reload();
@@ -46,20 +54,35 @@ export default function MSOSDesktop() {
     <main className="desktop-page">
       <header className="desktop-topbar">
         <button onClick={() => history.back()} title="Back"><ArrowLeft size={16} /></button>
-        <strong>MS-OS Desktop</strong>
-        <span>Anonymous cloud workspace</span>
+        <div className="desktop-brand">
+          <strong>MS-OS Desktop</strong>
+          <small>Cloud workspace</small>
+        </div>
+        <div className="desktop-status">
+          <span className="workspace-dot" />
+          <span>Online</span>
+          <button onClick={reload} disabled={refreshing} title="Refresh workspace">
+            <RefreshCw className={refreshing ? "spin" : ""} size={15} />
+          </button>
+        </div>
       </header>
 
       <section className="desktop-icons">
         {items.map(item => (
-          <button className="desktop-file-icon" key={item.path} onDoubleClick={() => openItem(item)}>
-            <span>{item.type === "directory" ? <Folder size={30} /> : <File size={28} />}</span>
+          <button className="desktop-file-icon" key={item.path} onDoubleClick={() => openItem(item)} title={"Open " + item.name}>
+            <span>
+              {item.type === "directory"
+                ? <Folder className="folder-icon-blue" size={30} />
+                : <File className="file-icon-white" size={28} />}
+            </span>
             <b>{item.name}</b>
           </button>
         ))}
         {items.length === 0 && (
           <div className="desktop-empty">
-            Workspace is empty. Create something from Terminal or Files.
+            <Folder size={32} />
+            <strong>No files yet</strong>
+            <span>Create something from Terminal or Files and it will appear here.</span>
           </div>
         )}
       </section>
@@ -89,8 +112,8 @@ export default function MSOSDesktop() {
               </div>
               <div className="coming">
                 <span>{window === "browser" ? "🌐" : "🛍️"}</span>
-                <h2>Coming next</h2>
-                <p>This window is already part of the desktop shell and will be wired to the cloud runtime later.</p>
+                <h2>{window === "browser" ? "Cloud Browser" : "MS-OS Apps Store"}</h2>
+                <p>This window is ready in the shell. The real cloud module will be connected next.</p>
               </div>
             </div>
           )}
@@ -107,15 +130,12 @@ export default function MSOSDesktop() {
           <div className="file-preview-window">
             <div className="window-bar">
               <div className="window-title">
-                <span className="window-folder"><File size={15} /></span>
+                <span className="window-folder"><File className="file-icon-white" size={15} /></span>
                 <strong>{viewer.item.name}</strong>
                 <small>/{viewer.item.path}</small>
               </div>
               <div className="window-actions">
-                <a
-                  href={"/api/files/download?path=" + encodeURIComponent(viewer.item.path)}
-                  title="Download"
-                >
+                <a href={"/api/files/download?path=" + encodeURIComponent(viewer.item.path)} title="Download">
                   <Download size={15} />
                 </a>
                 <button onClick={() => setViewer(null)} title="Close"><X size={15} /></button>
