@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
+import type { User } from "firebase/auth";
 import { AppWindow, ArrowRight, Folder, Globe, LogOut, Maximize, Monitor, Sparkles, Store, Terminal, UserRound, X } from "lucide-react";
 import { AppIcon } from "@/components/AppIcon";
 import { FileManager } from "@/components/FileManager";
