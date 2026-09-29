@@ -2,7 +2,7 @@ import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDDi1BbwudTPt5WYay96q6_nSfiCatmRWs",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDDiB1BbwudTPt5WYay96q6_nSfiCatmRWs",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "manav-os.firebaseapp.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "manav-os",
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "manav-os.firebasestorage.app",
